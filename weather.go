@@ -86,21 +86,90 @@ type Device struct {
 // GustStrength : Speed of the last 5 min highest gust wind @ LastMesure (in km/h)
 // LastMessage : Contains timestamp of last data received
 type DashboardData struct {
-	Temperature         float32 `json:"Temperature,omitempty"`
-	Humidity            int32   `json:"Humidity,omitempty"`
-	CO2                 int32   `json:"CO2,omitempty"`
-	Noise               int32   `json:"Noise,omitempty"`
-	Pressure            float32 `json:"Pressure,omitempty"`
-	AbsolutePressure    float32 `json:"AbsolutePressure,omitempty"`
-	Rain                float32 `json:"Rain,omitempty"`
-	Rain1Hour           float32 `json:"sum_rain_1,omitempty"`
-	Rain1Day            float32 `json:"sum_rain_24,omitempty"`
-	WindAngle           float32 `json:"WindAngle,omitempty"`
-	WindStrength        float32 `json:"WindStrength,omitempty"`
-	GustAngle           float32 `json:"GustAngle,omitempty"`
-	GustStrengthfloat32 float32 `json:"GustStrengthfloat32,omitempty"`
-	LastMesure          float64 `json:"time_utc"`
+	Temperature      float32 `json:"Temperature,omitempty"`
+	Humidity         int32   `json:"Humidity,omitempty"`
+	CO2              int32   `json:"CO2,omitempty"`
+	Noise            int32   `json:"Noise,omitempty"`
+	Pressure         float32 `json:"Pressure,omitempty"`
+	AbsolutePressure float32 `json:"AbsolutePressure,omitempty"`
+	Rain             float32 `json:"Rain,omitempty"`
+	Rain1Hour        float32 `json:"sum_rain_1,omitempty"`
+	Rain1Day         float32 `json:"sum_rain_24,omitempty"`
+	WindAngle        float32 `json:"WindAngle,omitempty"`
+	WindStrength     float32 `json:"WindStrength,omitempty"`
+	GustAngle        float32 `json:"GustAngle,omitempty"`
+	GustStrength     float32 `json:"GustStrength,omitempty"`
+	LastMeasure      float64 `json:"time_utc"`
 }
+
+var NAModuleMap = map[string][]string{
+	"NAMain": []string{
+		NAMainTemperature,
+		NAMainHumidity,
+		NAMainCO2,
+		NAMainNoise,
+		NAMainPressure,
+		NAMainAbsolutePressure,
+	},
+	"NAModule1": []string{
+		NAModule1Temperature,
+		NAModule1Humidity,
+	},
+	"NAModule2": []string{
+		NAModule2WindAngle,
+		NAModule2WindStrength,
+		NAModule2GustAngle,
+		NAModule2GustStrength,
+	},
+	"NAModule3": []string{
+		NAModule3Rain,
+		NAModule3Rain1Hour,
+		NAModule3Rain1Day,
+	},
+	"NAModule4": []string{
+		NAModule4Temperature,
+		NAModule4Humidity,
+		NAModule4CO2,
+	},
+}
+
+// Main module
+const (
+	NAMainTemperature      = "Temperature"
+	NAMainHumidity         = "Humidity"
+	NAMainCO2              = "CO2"
+	NAMainNoise            = "Noise"
+	NAMainPressure         = "Pressure"
+	NAMainAbsolutePressure = "AbsolutePressure"
+)
+
+// Outdoor module
+const (
+	NAModule1Temperature = "Temperature"
+	NAModule1Humidity    = "Humidity"
+)
+
+// Wind module
+const (
+	NAModule2WindAngle    = "WindAngle"
+	NAModule2WindStrength = "WindStrength"
+	NAModule2GustAngle    = "GustAngle"
+	NAModule2GustStrength = "GustStrength"
+)
+
+// Rain module
+const (
+	NAModule3Rain      = "Rain"
+	NAModule3Rain1Hour = "Rain1Hour"
+	NAModule3Rain1Day  = "Rain1Day"
+)
+
+// Aux Indoor module
+const (
+	NAModule4Temperature = "Temperature"
+	NAModule4Humidity    = "Humidity"
+	NAModule4CO2         = "CO2"
+)
 
 // NewClient create a handle authentication to Netamo API
 func NewClient(config Config) (*Client, error) {
@@ -225,9 +294,11 @@ func (d *Device) Modules() []*Device {
 func (d *Device) Data() (int, map[string]interface{}) {
 
 	m := make(map[string]interface{})
-	for _, datatype := range d.DataType {
-		m[datatype] = reflect.Indirect(reflect.ValueOf(d.DashboardData)).FieldByName(datatype).Interface()
+	if moduleMap, ok := NAModuleMap[d.Type]; ok {
+		for _, datatype := range moduleMap {
+			m[datatype] = reflect.Indirect(reflect.ValueOf(d.DashboardData)).FieldByName(datatype).Interface()
+		}
 	}
 
-	return int(d.DashboardData.LastMesure), m
+	return int(d.DashboardData.LastMeasure), m
 }
